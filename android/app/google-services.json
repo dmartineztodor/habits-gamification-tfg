@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "600979223478",
+    "project_id": "habits-gamification-tfg",
+    "storage_bucket": "habits-gamification-tfg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600979223478:android:5ae80d52ef1f745be98717",
+        "android_client_info": {
+          "package_name": "com.example.habits_gamification"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdMDa6u3MVGR-uAnvTxFyE7Nf-UsvPNt8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
