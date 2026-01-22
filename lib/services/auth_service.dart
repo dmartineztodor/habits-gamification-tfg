@@ -103,5 +103,15 @@ class AuthService {
     await _googleSignIn.signOut();
     await _auth.signOut();
   }
- 
+ // AÑADE ESTO: Función auxiliar para verificar si existe el campo 'nickname'
+  Future<bool> userHasNickname(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      // Verificamos si el documento existe Y si tiene el campo 'nickname'
+      return doc.exists && doc.data() != null && doc.data()!.containsKey('nickname');
+    } catch (e) {
+      return false; // Ante la duda, asumimos que no tiene
+    }
+  }
+
 }

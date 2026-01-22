@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habits_gamification/services/auth_service.dart';
 import 'package:habits_gamification/ui/screens/register_screen.dart';
+import 'package:habits_gamification/main.dart'; // Para HomeScreen
+import 'package:habits_gamification/ui/screens/nickname_screen.dart'; // Para NicknameScreen
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  // Lógica para Login con Email (se mantiene igual)
   void _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -31,6 +34,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        // Si el login es exitoso, el StreamProvider de main.dart debería redirigir automáticamente,
+        // pero si quieres forzar la comprobación de nickname aquí también, podrías hacerlo.
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -46,10 +51,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  // AQUI ES DONDE HEMOS ARREGLADO LA LÓGICA
   void _googleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(authServiceProvider).signInWithGoogle();
+      // 1. Obtenemos el servicio
+      final authService = ref.read(authServiceProvider);
+      
+      // 2. Ejecutamos el login
+      final user = await authService.signInWithGoogle();
+
+      if (user != null) {
+        // 3. Comprobamos si tiene Nickname (TU LÓGICA NUEVA)
+        bool hasNick = await authService.userHasNickname(user.uid);
+
+        if (mounted) {
+          if (hasNick) {
+            // CASO A: Ya tiene nickname -> Vamos a la Home
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          } else {
+            // CASO B: No tiene nickname -> Vamos a crearlo
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const NicknameScreen()),
+            );
+          }
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -61,7 +92,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  // AQUÍ ESTÁ EL DISEÑO DEFINITIVO (Fusionado)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,22 +137,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 30),
 
-                        // INPUT EMAIL (Con tu personalización del icono morado)
+                        // INPUT EMAIL
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             labelText: 'Correo electrónico',
-                            // Aquí está tu icono morado:
                             prefixIcon: const Icon(Icons.email, color: Colors.deepPurple),
                             filled: true,
                             fillColor: Colors.grey.shade100,
-                            // Borde redondeado y bonito
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none,
                             ),
-                            // Borde cuando pulsas (Morado)
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: const BorderSide(color: Color.fromARGB(255, 174, 145, 224), width: 2),
@@ -154,16 +181,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // BOTÓN LOGIN (Con tus colores Naranja/Azul)
+                        // BOTÓN LOGIN
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
                             onPressed: _isLoading ? null : _login,
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              // Forma redondeada
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              // TUS COLORES PERSONALIZADOS:
                               backgroundColor: Colors.deepOrangeAccent,
                               foregroundColor: Colors.blueAccent, 
                             ),
@@ -179,6 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                         // BOTÓN GOOGLE
                         OutlinedButton.icon(
+                           // AQUI LLAMAMOS A LA FUNCIÓN CORREGIDA
                            onPressed: _isLoading ? null : _googleLogin,
                            icon: const Icon(Icons.g_mobiledata, size: 28),
                            label: const Text('Google'),

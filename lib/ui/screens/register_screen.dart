@@ -124,7 +124,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: (v) => v!.length < 6 ? 'La contraseña es muy corta' : null,
                 ),
                 const SizedBox(height: 24),
-
+                  
                 // Botón Registrarse
                 _isLoading 
                   ? const Center(child: CircularProgressIndicator())
