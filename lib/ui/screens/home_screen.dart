@@ -4,7 +4,8 @@ import '../../logic/providers.dart';
 import '../../data/models/Habit.dart';
 import 'create_habit_screen.dart';
 import 'execute_routine_screen.dart';
-import 'profile_screen.dart'; // Asegúrate de tener este import
+import 'profile_screen.dart';
+import 'shop_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // ⏰ EJECUTAMOS EL AUDITOR NOCTURNO AL INICIAR
     // Usamos addPostFrameCallback para que se ejecute justo después de pintar la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authStateProvider).value;
@@ -36,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'} 👋'),
+        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -50,6 +50,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authRepositoryProvider).signOut(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.store, color: Colors.deepPurple),
+            tooltip: "Tienda",
+            onPressed: () {
+               Navigator.push(
+                 context, 
+                 MaterialPageRoute(builder: (_) => const ShopScreen())
+               );
+            },
           ),
         ],
       ),

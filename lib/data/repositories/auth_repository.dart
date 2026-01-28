@@ -114,4 +114,30 @@ class AuthRepository {
       });
     });
   }
+
+  // Comprar un ítem (Gastar monedas)
+  Future<void> purchaseItem(String uid, int price) async {
+    final userDocRef = _firestore.collection('users').doc(uid);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userDocRef);
+      if (!snapshot.exists) throw Exception("Usuario no encontrado");
+
+      final data = snapshot.data()!;
+      int currentCoins = data['coins'] ?? 0;
+
+      // 1. Comprobamos si tiene dinero suficiente
+      if (currentCoins < price) {
+        throw Exception("No tienes suficientes monedas");
+      }
+
+      // 2. Restamos el precio
+      int newCoins = currentCoins - price;
+
+      // 3. Guardamos (Aquí en el futuro añadiríamos el ítem al inventario)
+      transaction.update(userDocRef, {
+        'coins': newCoins,
+      });
+    });
+  }
 }
