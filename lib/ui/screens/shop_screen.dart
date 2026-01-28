@@ -111,7 +111,12 @@ class _ShopItemState extends ConsumerState<_ShopItem> {
       final user = ref.read(authStateProvider).value;
       if (user != null) {
         // Llamamos a la función de gastar dinero que creamos en el Paso 1
-        await ref.read(authRepositoryProvider).purchaseItem(user.uid, widget.price);
+        // AHORA: Pasamos también 'widget.name'
+        await ref.read(authRepositoryProvider).purchaseItem(
+          user.uid, 
+          widget.name,
+          widget.price
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +171,7 @@ class _ShopItemState extends ConsumerState<_ShopItem> {
                 ),
                 child: _isBuying 
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text("${widget.price} 💰"),
+                  : Text("${widget.price}"),
               ),
             )
           ],
