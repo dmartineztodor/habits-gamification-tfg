@@ -67,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         data: (habits) {
           if (habits.isEmpty) {
             return const Center(
-              child: Text("No tienes misiones activas. \n¡Crea una nueva! 🚀"),
+              child: Text("No tienes misiones activas. \n¡Crea una nueva!"),
             );
           }
           return ListView.builder(

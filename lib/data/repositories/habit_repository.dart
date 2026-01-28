@@ -70,56 +70,72 @@ class HabitRepository {
     final yesterday = today.subtract(const Duration(days: 1)); // Ayer a las 00:00
 
     try {
-      // 1. Bajamos todos los hábitos del usuario
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('habits')
-          .get();
+      // 1. Obtenemos referencia al usuario para ver sus ESCUDOS
+      final userDocRef = _firestore.collection('users').doc(userId);
+      final userSnapshot = await userDocRef.get();
+      
+      if (!userSnapshot.exists) return; // Seguridad
 
-      // 2. Revisamos uno por uno
-      for (var doc in snapshot.docs) {
+      // Leemos escudos (si no tiene campo, asumimos 0)
+      int shields = userSnapshot.data()?['shields'] ?? 0;
+      bool shieldUsedInThisRun = false; // Para gastar máximo 1 escudo por día globalmente
+
+      // 2. Bajamos todos los hábitos
+      final habitsSnapshot = await userDocRef.collection('habits').get();
+
+      for (var doc in habitsSnapshot.docs) {
         final habit = Habit.fromMap(doc.data(), doc.id);
         bool needsUpdate = false;
-        
+
         // Variables temporales para modificar el hábito
         bool newIsCompleted = habit.isCompleted;
         int newStreak = habit.streak;
 
-        // Limpiamos la fecha guardada para comparar solo AÑO/MES/DÍA (ignoramos hora)
+        // Limpiamos la fecha guardada para comparar solo FECHAS (sin horas)
         final lastDate = DateTime(
           habit.lastCompletedDate.year, 
           habit.lastCompletedDate.month, 
           habit.lastCompletedDate.day
         );
 
-        // CASO A: REINICIO DIARIO (Desmarcar casilla)
-        // Si el hábito aparece completado, pero la fecha NO es de hoy...
+        // --- CASO A: REINICIO DIARIO (Desmarcar casilla) ---
+        // Si aparece completado, pero la fecha NO es de hoy...
         // Significa que fue de ayer (o antes). Hay que desmarcarlo para hoy.
         if (habit.isCompleted && lastDate.isBefore(today)) {
           newIsCompleted = false;
           needsUpdate = true;
         }
 
-        // CASO B: ROMPER RACHA (Streak = 0)
-        // Si la última vez que se tocó fue ANTES de ayer...
-        // Significa que ayer no hiciste nada. ¡Racha perdida!
-        // (Ejemplo: Hoy es Viernes. Si lo último fue el Miércoles, ayer Jueves fallaste).
+        // --- CASO B: ROMPER RACHA (Streak = 0) ---
+        // Si la última vez que se completó fue ANTES de ayer...
+        // Significa que ayer no hiciste nada.
         if (lastDate.isBefore(yesterday)) {
           if (habit.streak > 0) {
-            newStreak = 0;
-            needsUpdate = true;
+            // ¡MOMENTO DE USAR EL ESCUDO! 🛡️
+            // Si tenemos escudos y no hemos gastado uno ya en esta revisión...
+            if (shields > 0 && !shieldUsedInThisRun) {
+              shields--; // Restamos escudo
+              shieldUsedInThisRun = true; 
+              // NO tocamos el streak, ¡se salva!
+              // (Podríamos actualizar lastCompletedDate a 'ayer' para evitar chequeos futuros, 
+              // pero con no poner newStreak a 0 es suficiente).
+              print("¡El escudo ha salvado tu racha en: ${habit.title}! 🛡️");
+            } else {
+              // No hay piedad: Racha a 0 💀
+              newStreak = 0;
+              needsUpdate = true;
+            }
           }
         }
 
-        // 3. Si hubo cambios, guardamos en Firebase
+        // 3. Si hubo cambios en el hábito, guardamos en Firebase
         if (needsUpdate) {
           final updatedHabit = Habit(
             id: habit.id,
             title: habit.title,
             isCompleted: newIsCompleted, // Nuevo estado
-            lastCompletedDate: habit.lastCompletedDate, // Mantenemos la fecha original de la última vez que se hizo
-            streak: newStreak, // Nueva racha
+            lastCompletedDate: habit.lastCompletedDate, // Mantenemos la fecha original
+            streak: newStreak, // Nueva racha (o 0 si murió)
             difficulty: habit.difficulty,
             steps: habit.steps,
           );
@@ -127,8 +143,16 @@ class HabitRepository {
           await updateHabit(userId, updatedHabit);
         }
       }
+
+      // 4. Si gastamos un escudo, actualizamos el inventario del usuario
+      if (shieldUsedInThisRun) {
+        await userDocRef.update({
+          'shields': shields
+        });
+      }
+
     } catch (e) {
-      print("Error: $e");
+      print("Error en el auditor nocturno: $e");
     }
   }
 }

@@ -116,7 +116,7 @@ class AuthRepository {
   }
 
   // Comprar un ítem (Gastar monedas)
-  Future<void> purchaseItem(String uid, int price) async {
+  Future<void> purchaseItem(String uid, String itemName, int price) async {
     final userDocRef = _firestore.collection('users').doc(uid);
 
     await _firestore.runTransaction((transaction) async {
@@ -125,19 +125,23 @@ class AuthRepository {
 
       final data = snapshot.data()!;
       int currentCoins = data['coins'] ?? 0;
+      int currentShields = data['shields'] ?? 0;
 
-      // 1. Comprobamos si tiene dinero suficiente
+      // 1. Cobrar
       if (currentCoins < price) {
         throw Exception("No tienes suficientes monedas");
       }
-
-      // 2. Restamos el precio
       int newCoins = currentCoins - price;
 
-      // 3. Guardamos (Aquí en el futuro añadiríamos el ítem al inventario)
-      transaction.update(userDocRef, {
-        'coins': newCoins,
-      });
+      // 2. Entregar el producto (Lógica de inventario)
+      Map<String, dynamic> updates = {'coins': newCoins};
+
+      if (itemName == "Escudo Divino") {
+        updates['shields'] = currentShields + 1; // damos un escudo
+      } 
+
+      // 3. Guardar cambios
+      transaction.update(userDocRef, updates);
     });
   }
 }

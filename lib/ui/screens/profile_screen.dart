@@ -14,14 +14,6 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text("Perfil de Jugador"),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-               // Aquí podrías poner ajustes en el futuro
-            },
-          )
-        ],
       ),
       body: userStats.when(
         data: (user) {
@@ -35,18 +27,16 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBody(BuildContext context, AppUser user) {
-    // Lógica simple de nivel: Cada nivel requiere (Nivel * 100) XP
-    // Ejemplo: Nivel 1 necesita 100 XP. Nivel 2 necesita 200 XP.
+    // Cálculo de XP para el siguiente nivel
     int nextLevelXp = user.currentLevel * 100;
     double progress = user.currentXp / nextLevelXp;
-    // Nos aseguramos de que la barra no se pase de 1.0 (100%)
     if (progress > 1.0) progress = 1.0; 
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // 1. AVATAR Y NOMBRE
+          // 1. AVATAR
           const CircleAvatar(
             radius: 50,
             backgroundColor: Colors.deepPurple,
@@ -64,7 +54,7 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 30),
 
-          // 2. TARJETA DE ESTADÍSTICAS PRINCIPALES
+          // 2. TARJETA DE ESTADÍSTICAS (Ahora con Escudos 🛡️)
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -82,15 +72,17 @@ class ProfileScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _statItem("NIVEL", "${user.currentLevel}", Colors.blue),
-                Container(width: 1, height: 40, color: Colors.grey.shade300),
+                _divider(),
                 _statItem("MONEDAS", "${user.coins} 💰", Colors.orange),
+                _divider(),
+                _statItem("ESCUDOS", "${user.shields} 🛡️", Colors.purple), // <--- NUEVO
               ],
             ),
           ),
 
           const SizedBox(height: 30),
 
-          // 3. BARRA DE EXPERIENCIA (XP)
+          // 3. BARRA DE EXPERIENCIA
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -121,21 +113,28 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  // Helper para la línea separadora vertical
+  Widget _divider() {
+    return Container(width: 1, height: 40, color: Colors.grey.shade300);
+  }
+
+  // --- TU FUNCIÓN STATITEM COMPLETA ---
   Widget _statItem(String label, String value, Color color) {
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 28, 
+            fontSize: 24, // Un poco más pequeño para que quepan los 3
             fontWeight: FontWeight.bold, 
             color: color
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12, 
+            fontSize: 11, 
             fontWeight: FontWeight.bold, 
             color: Colors.grey
           ),
