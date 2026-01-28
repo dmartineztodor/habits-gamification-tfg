@@ -59,13 +59,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if (user != null) {
         // 4. Creamos el objeto Habit
         final newHabit = Habit(
-          id: '', // Firestore generará la ID automáticamente
+          id: '',
           title: title,
           isCompleted: false,
-          lastCompletedDate: DateTime(2000), // Fecha antigua para indicar "no hecho hoy"
+          lastCompletedDate: DateTime(2000),
           difficulty: _selectedDifficulty,
-          // Nota: De momento no guardamos '_steps' porque el modelo Habit.dart 
-          // aún no tiene ese campo. Lo añadiremos en el Sprint 2.
+          steps: _steps, // <--- ¡AQUÍ ESTÁ! Ya no ignoramos la lista _steps
         );
 
         // 5. ¡ENVIAMOS A FIREBASE!
