@@ -1,94 +1,117 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../logic/providers.dart';
+import '../../data/models/Habit.dart';
 
-class ExecuteRoutineScreen extends StatefulWidget {
-  final String title;
-  final List<String> steps;
+class ExecuteRoutineScreen extends ConsumerStatefulWidget {
+  final Habit habit; // Ahora recibimos el hábito completo (con ID), no solo el título
 
   const ExecuteRoutineScreen({
     super.key,
-    required this.title,
-    required this.steps,
+    required this.habit,
   });
 
   @override
-  State<ExecuteRoutineScreen> createState() => _ExecuteRoutineScreenState();
+  ConsumerState<ExecuteRoutineScreen> createState() => _ExecuteRoutineScreenState();
 }
 
-class _ExecuteRoutineScreenState extends State<ExecuteRoutineScreen> {
-  // Lista para saber qué casillas están marcadas
+class _ExecuteRoutineScreenState extends ConsumerState<ExecuteRoutineScreen> {
+  // Simulamos unos pasos fijos porque el modelo Habit aún no tiene lista de pasos
+  // TODO: En el futuro, esto vendrá de widget.habit.steps
+  final List<String> _fakeSteps = [
+    "Prepárate mentalmente",
+    "¡Hazlo sin pensar!",
+    "Sonríe al terminar"
+  ];
+  
   late List<bool> _checkedStatus;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Al principio, todas las casillas están desmarcadas (false)
-    _checkedStatus = List<bool>.filled(widget.steps.length, false);
+    _checkedStatus = List<bool>.filled(_fakeSteps.length, false);
   }
 
-  // Calculamos el progreso (0.0 a 1.0) para la barra
   double get _progress {
-    if (widget.steps.isEmpty) return 0;
+    if (_fakeSteps.isEmpty) return 0;
     int completed = _checkedStatus.where((c) => c).length;
-    return completed / widget.steps.length;
+    return completed / _fakeSteps.length;
   }
 
-  void _finishRoutine() {
-    // Aquí más adelante guardaremos que has terminado la rutina en Firebase
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('¡Misión Completada! +10 EXP'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-    Navigator.pop(context); // Volver a la home
+  // --- LÓGICA PARA COMPLETAR LA MISIÓN ---
+  void _finishRoutine() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final user = ref.read(authStateProvider).value;
+      if (user != null) {
+        // 1. Creamos una copia del hábito actualizado
+        final updatedHabit = Habit(
+          id: widget.habit.id,
+          title: widget.habit.title,
+          difficulty: widget.habit.difficulty,
+          // CAMBIOS CLAVE:
+          isCompleted: true, // ¡Misión cumplida!
+          lastCompletedDate: DateTime.now(), // Fecha de hoy
+          streak: widget.habit.streak + 1, // Aumentamos racha
+        );
+
+        // 2. Guardamos en Firebase usando tu Controller
+        await ref.read(habitControllerProvider.notifier).updateHabit(user.uid, updatedHabit);
+
+        // 3. Feedback visual y salir
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('¡Misión Completada! +${widget.habit.xp} XP 🌟'),
+              backgroundColor: Colors.amber,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context); // Volver al Home
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.deepPurple.shade100,
-      ),
+      appBar: AppBar(title: Text(widget.habit.title)),
       body: Column(
         children: [
-          // 1. BARRA DE PROGRESO
+          // BARRA DE PROGRESO
           LinearProgressIndicator(
             value: _progress,
-            minHeight: 10,
             backgroundColor: Colors.grey.shade200,
-            color: Colors.green,
+            color: _progress == 1.0 ? Colors.green : Colors.deepPurple,
+            minHeight: 10,
           ),
           
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "${(_progress * 100).toInt()}% Completado",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-          ),
-
-          // 2. LISTA DE TAREAS (Checkboxes)
           Expanded(
             child: ListView.builder(
-              itemCount: widget.steps.length,
+              padding: const EdgeInsets.all(16),
+              itemCount: _fakeSteps.length,
               itemBuilder: (context, index) {
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  // Si está marcada, la ponemos un poco gris
-                  color: _checkedStatus[index] ? Colors.green.shade50 : Colors.white,
                   child: CheckboxListTile(
                     title: Text(
-                      widget.steps[index],
+                      _fakeSteps[index],
                       style: TextStyle(
-                        // Tachamos el texto si está completado
                         decoration: _checkedStatus[index] ? TextDecoration.lineThrough : null,
                         color: _checkedStatus[index] ? Colors.grey : Colors.black,
                       ),
                     ),
                     value: _checkedStatus[index],
-                    activeColor: Colors.green,
                     onChanged: (bool? value) {
                       setState(() {
                         _checkedStatus[index] = value ?? false;
@@ -100,16 +123,19 @@ class _ExecuteRoutineScreenState extends State<ExecuteRoutineScreen> {
             ),
           ),
 
-          // 3. BOTÓN TERMINAR
+          // BOTÓN DE TERMINAR
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _progress == 1.0 ? _finishRoutine : null, // Solo se activa si está al 100%
-                icon: const Icon(Icons.check_circle),
-                label: const Text("TERMINAR MISIÓN", style: TextStyle(fontWeight: FontWeight.bold)),
+                // Solo se activa si está al 100% y no está guardando
+                onPressed: (_progress == 1.0 && !_isSaving) ? _finishRoutine : null,
+                icon: _isSaving 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.check_circle),
+                label: Text(_isSaving ? "GUARDANDO..." : "RECLAMAR RECOMPENSA"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,

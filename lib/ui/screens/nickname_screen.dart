@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:habits_gamification/main.dart'; // Asegúrate de que esto apunta a tu HomeScreen
+import 'home_screen.dart';
 
 class NicknameScreen extends StatefulWidget {
   const NicknameScreen({super.key});

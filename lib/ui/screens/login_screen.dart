@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habits_gamification/services/auth_service.dart';
 import 'package:habits_gamification/ui/screens/register_screen.dart';
-import 'package:habits_gamification/main.dart'; // Para HomeScreen
 import 'package:habits_gamification/ui/screens/nickname_screen.dart'; // Para NicknameScreen
+import 'home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final user = await authService.signInWithGoogle();
 
       if (user != null) {
-        // 3. Comprobamos si tiene Nickname (TU LÓGICA NUEVA)
+        // 3. Comprobamos si tiene Nickname
         bool hasNick = await authService.userHasNickname(user.uid);
 
         if (mounted) {
