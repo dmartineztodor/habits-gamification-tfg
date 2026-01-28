@@ -112,17 +112,17 @@ class _ExecuteRoutineScreenState extends ConsumerState<ExecuteRoutineScreen> {
           
           Expanded(
             child: isSimpleTask
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.fitness_center, size: 80, color: Colors.grey),
-                      const SizedBox(height: 20),
-                      const Text(
+                      Icon(Icons.fitness_center, size: 80, color: Colors.grey),
+                      SizedBox(height: 20),
+                      Text(
                         "Misión Simple",
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      const Text("¡Completa la tarea y reclama tu premio!"),
+                      Text("¡Completa la tarea y reclama tu premio!"),
                     ],
                   ),
                 )

@@ -1,4 +1,4 @@
-import 'habit_difficulty.dart'; // Importamos la clase que gestiona la dificultad del hábito
+import 'habit_difficulty.dart';
 
 class Habit {
   final String id;
@@ -7,6 +7,7 @@ class Habit {
   final DateTime lastCompletedDate;
   final int streak;
   final HabitDifficulty difficulty;
+  final List<String> steps;
 
   Habit({
     required this.id,
@@ -14,13 +15,14 @@ class Habit {
     this.isCompleted = false,
     required this.lastCompletedDate,
     this.streak = 0,
-    this.difficulty = HabitDifficulty.easy, // Valor por defecto
+    this.difficulty = HabitDifficulty.easy,
+    this.steps = const [],
   });
 
   int get xp => difficulty.xpReward;
   int get coins => difficulty.coinReward;
 
-  // Función que importa los datos de la base de datos firebase
+  // Importar de Firebase
   factory Habit.fromMap(Map<String, dynamic> map, String documentId) {
     return Habit(
       id: documentId,
@@ -28,15 +30,16 @@ class Habit {
       isCompleted: map['isCompleted'] ?? false,
       lastCompletedDate: DateTime.parse(map['lastCompletedDate']),
       streak: map['streak'] ?? 0,
-      
       difficulty: HabitDifficulty.values.firstWhere(
         (e) => e.name == (map['difficulty'] ?? 'easy'),
         orElse: () => HabitDifficulty.easy,
       ),
+      // Mapeamos la lista de pasos. Si no existe, usamos lista vacía.
+      steps: List<String>.from(map['steps'] ?? []), // <--- MAGIA AQUÍ
     );
   }
 
-  // Función para enviar datos de la aplicación a nuestra base de datos firebase
+  // Exportar a Firebase
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -44,6 +47,7 @@ class Habit {
       'lastCompletedDate': lastCompletedDate.toIso8601String(),
       'streak': streak,
       'difficulty': difficulty.name,
+      'steps': steps,
     };
   }
 }

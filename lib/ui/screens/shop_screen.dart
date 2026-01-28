@@ -45,7 +45,7 @@ class ShopScreen extends ConsumerWidget {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 0.8, // Tarjetas un poco más altas que anchas
-        children: [
+        children: const [
           // ÍTEMS DE EJEMPLO
           _ShopItem(
             name: "Poción de Salud",

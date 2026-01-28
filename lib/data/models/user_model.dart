@@ -5,6 +5,7 @@ class AppUser {
   final int currentLevel;
   final int currentXp;
   final int coins;
+  final int shields; 
 
   AppUser({
     required this.id,
@@ -13,6 +14,7 @@ class AppUser {
     this.currentLevel = 1,
     this.currentXp = 0,
     this.coins = 0,
+    this.shields = 0, 
   });
 
   // Convertir de Map (Firebase) a Objeto Dart
@@ -24,6 +26,7 @@ class AppUser {
       currentLevel: map['currentLevel'] ?? 1,
       currentXp: map['currentXp'] ?? 0,
       coins: map['coins'] ?? 0,
+      shields: map['shields'] ?? 0, 
     );
   }
 
@@ -35,6 +38,7 @@ class AppUser {
       'currentLevel': currentLevel,
       'currentXp': currentXp,
       'coins': coins,
+      'shields': shields,
     };
   }
 }
