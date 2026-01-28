@@ -4,33 +4,49 @@ import '../../logic/providers.dart';
 import '../../data/models/Habit.dart';
 import 'create_habit_screen.dart';
 import 'execute_routine_screen.dart';
-import 'profile_screen.dart';
+import 'profile_screen.dart'; // Asegúrate de tener este import
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Escuchamos la lista de hábitos en tiempo real
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  
+  @override
+  void initState() {
+    super.initState();
+    // ⏰ EJECUTAMOS EL AUDITOR NOCTURNO AL INICIAR
+    // Usamos addPostFrameCallback para que se ejecute justo después de pintar la pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authStateProvider).value;
+      if (user != null) {
+        // Llamamos a la función de reinicio que acabamos de crear
+        ref.read(habitRepositoryProvider).checkDailyResets(user.uid);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final habitsAsync = ref.watch(userHabitsProvider);
     final userAsync = ref.watch(authStateProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'}'),
+        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'} 👋'),
         actions: [
-          // NUEVO: Botón de Perfil
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
-               // Navegar al perfil
                Navigator.push(
                  context, 
                  MaterialPageRoute(builder: (_) => const ProfileScreen())
                );
             },
           ),
-          // Botón de salir (ya lo tenías)
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authRepositoryProvider).signOut(),
@@ -68,6 +84,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+// Widget de la tarjeta (se mantiene igual, solo lo incluyo para que el código esté completo)
 class HabitCard extends StatelessWidget {
   final Habit habit;
   const HabitCard({required this.habit, super.key});
@@ -79,18 +96,35 @@ class HabitCard extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: habit.isCompleted ? Colors.green : Colors.grey,
-          child: Icon(habit.isCompleted ? Icons.check : Icons.fitness_center, color: Colors.white),
+          child: Icon(habit.isCompleted ? Icons.check : Icons.fire_extinguisher, color: Colors.white),
         ),
-        title: Text(habit.title),
-        subtitle: Text("Recompensa: ${habit.xp} XP"),
+        title: Text(
+          habit.title,
+          style: TextStyle(
+            decoration: habit.isCompleted ? TextDecoration.lineThrough : null,
+            color: habit.isCompleted ? Colors.grey : Colors.black,
+          ),
+        ),
+        subtitle: Row(
+          children: [
+            const Icon(Icons.local_fire_department, size: 16, color: Colors.orange),
+            Text(" Racha: ${habit.streak} días"),
+          ],
+        ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
+          // Si ya está completado hoy, avisamos y no dejamos entrar (o podrías dejar entrar solo para ver)
+          if (habit.isCompleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("¡Ya cumpliste esta misión hoy! Vuelve mañana.")),
+            );
+            return;
+          }
+
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ExecuteRoutineScreen(
-                habit: habit, // Pasamos el objeto entero
-              ),
+              builder: (context) => ExecuteRoutineScreen(habit: habit),
             ),
           );
         },
