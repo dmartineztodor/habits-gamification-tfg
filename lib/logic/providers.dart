@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../data/models/user_model.dart';
 import '../data/repositories/habit_repository.dart';
 import '../data/repositories/auth_repository.dart';
 import 'package:habits_gamification/data/models/Habit.dart';
@@ -66,4 +66,20 @@ final userHabitsProvider = StreamProvider<List<Habit>>((ref) {
   // Si hay usuario, pedimos sus hábitos al repositorio
   final repo = ref.watch(habitRepositoryProvider);
   return repo.getHabits(user.uid);
+});
+
+// 3. Stream de ESTADÍSTICAS DEL JUGADOR (XP, Monedas, Nivel)
+// UI: ref.watch(userStatsProvider)
+final userStatsProvider = StreamProvider<AppUser?>((ref) {
+  // A) Vemos quién está logueado en Auth
+  final authState = ref.watch(authStateProvider);
+  final userAuth = authState.value;
+
+  // B) Si no hay nadie, devolvemos vacío
+  if (userAuth == null) {
+    return const Stream.empty();
+  }
+
+  // C) Si hay usuario, pedimos sus DATOS DE JUEGO al repositorio
+  return ref.watch(authRepositoryProvider).getUserData(userAuth.uid);
 });

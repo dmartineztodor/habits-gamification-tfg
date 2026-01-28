@@ -47,6 +47,7 @@ class _ExecuteRoutineScreenState extends ConsumerState<ExecuteRoutineScreen> {
     try {
       final user = ref.read(authStateProvider).value;
       if (user != null) {
+        // 1. Actualizar el HÁBITO (marcarlo completado)
         final updatedHabit = Habit(
           id: widget.habit.id,
           title: widget.habit.title,
@@ -54,28 +55,43 @@ class _ExecuteRoutineScreenState extends ConsumerState<ExecuteRoutineScreen> {
           isCompleted: true,
           lastCompletedDate: DateTime.now(),
           streak: widget.habit.streak + 1,
-          steps: widget.habit.steps, // <--- NO OLVIDAR MANTENER LOS PASOS AL ACTUALIZAR
+          steps: widget.habit.steps,
         );
 
+        // Llamamos al Controller de Hábitos
         await ref.read(habitControllerProvider.notifier).updateHabit(user.uid, updatedHabit);
 
+        // 2. NUEVO: Dar RECOMPENSAS al Usuario (XP y Monedas)
+        // Usamos la dificultad del hábito para saber cuánto pagar
+        await ref.read(authRepositoryProvider).addRewards(
+          user.uid, 
+          widget.habit.xp,    // XP según dificultad (Easy=10, Hard=60...)
+          widget.habit.coins  // Monedas según dificultad
+        );
+
         if (mounted) {
+          // Mensaje de victoria
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('¡Misión Completada! +${widget.habit.xp} XP 🌟'),
+              content: Text('¡Misión Completada! +${widget.habit.xp} XP | +${widget.habit.coins} 💰'),
               backgroundColor: Colors.amber,
+              behavior: SnackBarBehavior.floating,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context); // Volver al Home
         }
       }
     } catch (e) {
-      // ... manejo de error igual
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     // Si la misión NO tiene pasos, mostramos un diseño simplificado

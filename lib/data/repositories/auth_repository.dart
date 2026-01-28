@@ -62,4 +62,56 @@ class AuthRepository {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  // Escuchar los datos del jugador en tiempo real (XP, Nivel, Monedas)
+  Stream<AppUser?> getUserData(String uid) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots() // <--- Esto mantiene la conexión abierta
+        .map((snapshot) {
+          if (!snapshot.exists) return null;
+          // Convertimos los datos crudos de Firestore a objeto AppUser
+          return AppUser.fromMap(snapshot.data()!, snapshot.id);
+        });
+  }
+
+  // Sumar recompensas y calcular nivel
+  Future<void> addRewards(String uid, int xpEarned, int coinsEarned) async {
+    final userDocRef = _firestore.collection('users').doc(uid);
+
+    // Usamos una transacción para que sea seguro (por si ganas XP desde dos sitios a la vez)
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userDocRef);
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data()!;
+      int currentXp = data['currentXp'] ?? 0;
+      int currentLevel = data['currentLevel'] ?? 1;
+      int currentCoins = data['coins'] ?? 0;
+
+      // 1. Sumamos lo ganado
+      int newXp = currentXp + xpEarned;
+      int newCoins = currentCoins + coinsEarned;
+      int newLevel = currentLevel;
+
+      // 2. Lógica de LEVEL UP (Subir de nivel)
+      // Fórmula: Cada nivel cuesta (Nivel * 100) XP.
+      // Ej: Nivel 1 -> 100xp. Nivel 2 -> 200xp.
+      int xpToNextLevel = newLevel * 100;
+
+      while (newXp >= xpToNextLevel) {
+        newXp -= xpToNextLevel; // Restamos la XP gastada
+        newLevel++;             // ¡SUBIMOS DE NIVEL!
+        xpToNextLevel = newLevel * 100; // Calculamos el siguiente escalón
+      }
+
+      // 3. Guardamos los cambios
+      transaction.update(userDocRef, {
+        'currentXp': newXp,
+        'currentLevel': newLevel,
+        'coins': newCoins,
+      });
+    });
+  }
 }

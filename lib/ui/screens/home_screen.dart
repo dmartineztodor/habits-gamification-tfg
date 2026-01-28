@@ -4,6 +4,7 @@ import '../../logic/providers.dart';
 import '../../data/models/Habit.dart';
 import 'create_habit_screen.dart';
 import 'execute_routine_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -16,8 +17,20 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'} 👋'),
+        title: Text('Hola, ${userAsync.value?.displayName ?? 'Jugador'}'),
         actions: [
+          // NUEVO: Botón de Perfil
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+               // Navegar al perfil
+               Navigator.push(
+                 context, 
+                 MaterialPageRoute(builder: (_) => const ProfileScreen())
+               );
+            },
+          ),
+          // Botón de salir (ya lo tenías)
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authRepositoryProvider).signOut(),
